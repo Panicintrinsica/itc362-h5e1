@@ -20,28 +20,33 @@ class MainActivity : AppCompatActivity() {
         trueButton = findViewById(R.id.true_button)
         falseButton = findViewById(R.id.false_button)
 
-//        trueButton.setOnClickListener { view: View ->
-//            Toast.makeText(this, R.string.true_button, Toast.LENGTH_SHORT).show()
-//        }
-//
-//        falseButton.setOnClickListener { view: View ->
-//            Toast.makeText(this, R.string.false_button, Toast.LENGTH_SHORT).show()
-//        }
+        val useSnackbar = true
 
-        trueButton.setOnClickListener { it: View ->
-            val snackbar = Snackbar
-                .make(it, "Correct", Snackbar.LENGTH_SHORT)
-                .setTextColor(Color.BLACK)
-                .setBackgroundTint(Color.GREEN)
-                .show()
-        }
 
-        falseButton.setOnClickListener { it: View ->
-            val snackbar = Snackbar
-                .make(it, "Incorrect", Snackbar.LENGTH_SHORT)
-                .setTextColor(Color.BLACK)
-                .setBackgroundTint(Color.RED)
-                .show()
+        if (useSnackbar){
+            trueButton.setOnClickListener { it: View ->
+                Snackbar
+                    .make(it, "Correct", Snackbar.LENGTH_SHORT)
+                    .setTextColor(Color.BLACK)
+                    .setBackgroundTint(Color.GREEN)
+                    .show()
+            }
+
+            falseButton.setOnClickListener { it: View ->
+                Snackbar
+                    .make(it, "Incorrect", Snackbar.LENGTH_SHORT)
+                    .setTextColor(Color.BLACK)
+                    .setBackgroundTint(Color.RED)
+                    .show()
+            }
+        } else {
+            trueButton.setOnClickListener { view: View ->
+                Toast.makeText(this, R.string.true_button, Toast.LENGTH_SHORT).show()
+            }
+
+            falseButton.setOnClickListener { view: View ->
+                Toast.makeText(this, R.string.false_button, Toast.LENGTH_SHORT).show()
+            }
         }
 
     }
