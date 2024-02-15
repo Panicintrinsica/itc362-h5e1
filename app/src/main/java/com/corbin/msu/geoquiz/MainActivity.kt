@@ -1,15 +1,15 @@
 package com.corbin.msu.geoquiz
 
-
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import com.corbin.msu.geoquiz.databinding.ActivityMainBinding
 
+private const val TAG = "MainActivity"
+
 class MainActivity : AppCompatActivity() {
-
-
 
     private lateinit var binding: ActivityMainBinding
 
@@ -25,6 +25,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        Log.d(TAG, "onCreate(Bundle?) called")
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -51,23 +54,52 @@ class MainActivity : AppCompatActivity() {
         updateQuestion()
     }
 
+    override fun onStart() {
+        super.onStart()
+        Log.d(TAG, "onStart() called")
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Log.d(TAG, "onResume() called")
+    }
+
+    override fun onPause() {
+        super.onPause()
+        Log.d(TAG, "onPause() called")
+    }
+
+    override fun onStop() {
+        super.onStop()
+        Log.d(TAG, "onStop() called")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d(TAG, "onDestroy() called")
+    }
+
     private fun updateQuestion() {
-        val questionTextResId = questionBank[currentIndex].textResId
+        val questionTextResId = questionBank[this.currentIndex].textResId
         binding.questionTextView.setText(questionTextResId)
     }
 
     private fun nextQuestion() {
-        currentIndex = (currentIndex + 1) % questionBank.size
+        this.currentIndex = (this.currentIndex + 1) % questionBank.size
         updateQuestion()
     }
 
     private fun lastQuestion() {
-        currentIndex = (currentIndex - 1) % questionBank.size
+        this.currentIndex = if (this.currentIndex == 0) {
+            questionBank.size - 1
+        } else {
+            this.currentIndex - 1
+        }
         updateQuestion()
     }
 
     private fun checkAnswer(userAnswer: Boolean) {
-        val correctAnswer = questionBank[currentIndex].answer
+        val correctAnswer = questionBank[this.currentIndex].answer
         val messageResId = if (userAnswer == correctAnswer) {
             R.string.correct_toast
         } else {
