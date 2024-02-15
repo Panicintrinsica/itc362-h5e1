@@ -36,11 +36,11 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         binding.trueButton.setOnClickListener { it: View ->
-            answer(true)
+            answerQuestion(true)
         }
 
         binding.falseButton.setOnClickListener { it: View ->
-            answer(false)
+            answerQuestion(false)
         }
 
         binding.questionTextView.setOnClickListener {
@@ -79,7 +79,28 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG, "onDestroy() called")
     }
 
-    private fun answer(choice: Boolean) {
+    /**
+     * Initialize and or reset the quiz to the default state
+     */
+    private fun initQuiz() {
+        answers = Array<Boolean?>(questionBank.size) { null }
+        this.currentIndex = 0
+
+        displayQuestion()
+        checkQuestionStatus()
+
+        // Reset Next Button
+        binding.nextButton.setText(R.string.next_button)
+        binding.nextButton.setOnClickListener {
+            nextQuestion()
+        }
+    }
+
+    /**
+     * Answer the current question
+     * @param choice: The user's answer
+     */
+    private fun answerQuestion(choice: Boolean) {
         val correctAnswer = questionBank[this.currentIndex].answer
 
         if (choice == correctAnswer) {
@@ -93,8 +114,12 @@ class MainActivity : AppCompatActivity() {
         checkQuestionStatus()
     }
 
-    private fun showAnswerFeedback(boolean: Boolean) {
-        val messageResId = if (boolean) {
+    /**
+     * Show feedback to the user
+     * @param isCorrect: if the user's answer was correct.
+     */
+    private fun showAnswerFeedback(isCorrect: Boolean) {
+        val messageResId = if (isCorrect) {
             R.string.correct_toast
         } else {
             R.string.incorrect_toast
@@ -103,15 +128,18 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, messageResId, Toast.LENGTH_SHORT).show()
     }
 
-
-    private fun calcualteScore() {}
-
+    /**
+     * Display the next question
+     */
     private fun nextQuestion() {
         this.currentIndex = (this.currentIndex + 1) % questionBank.size
         displayQuestion()
         checkQuestionStatus()
     }
 
+    /**
+     * Display the previous question
+     */
     private fun previousQuestion() {
         this.currentIndex = if (this.currentIndex == 0) {
             questionBank.size - 1
@@ -122,11 +150,10 @@ class MainActivity : AppCompatActivity() {
         checkQuestionStatus()
     }
 
+    /**
+     * Check the status of the current question and update the UI accordingly
+     */
     private fun checkQuestionStatus() {
-
-        Log.d(TAG, "Current Index: ${this.currentIndex}")
-        Log.d(TAG, "Answers: ${answers.size}")
-
         // Is Answered
         if (answers.getOrNull(this.currentIndex) != null) {
             binding.trueButton.isEnabled = false
@@ -156,34 +183,32 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    /**
+     * Display the current question
+     */
     private fun displayQuestion() {
         val questionTextResId = questionBank[this.currentIndex].textResId
         binding.questionTextView.setText(questionTextResId)
     }
 
-    private fun endQuiz() {
+    /**
+     * Calculate the user's score and display it to the user
+     * @return the user's score as a percentage
+     */
+    private fun calculateScore(): Double {
         val score = answers.count { it == true }
+        return (score.toDouble() / questionBank.size.toDouble()) * 100
+    }
 
-        val percentage = (score.toDouble() / questionBank.size.toDouble()) * 100
-        val message = "You scored " + round(percentage * 10.0) / 10.0 + "%"
+    /**
+     * End the quiz and display the user's score, then reset the quiz.
+     */
+    private fun endQuiz() {
+        val score = calculateScore()
+        val message = "You scored " + round(score * 10.0) / 10.0 + "%"
 
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
 
         initQuiz()
     }
-
-    private fun initQuiz() {
-        answers = Array<Boolean?>(questionBank.size) { null }
-        this.currentIndex = 0
-
-        displayQuestion()
-        checkQuestionStatus()
-
-        // Reset Next Button
-        binding.nextButton.setText(R.string.next_button)
-        binding.nextButton.setOnClickListener {
-            nextQuestion()
-        }
-    }
-
 }
