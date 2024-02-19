@@ -3,7 +3,6 @@ package com.corbin.msu.geoquiz
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import android.view.View
 import android.widget.Toast
 import com.corbin.msu.geoquiz.databinding.ActivityMainBinding
 import kotlin.math.round
@@ -35,11 +34,11 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.trueButton.setOnClickListener { it: View ->
+        binding.trueButton.setOnClickListener {
             answerQuestion(true)
         }
 
-        binding.falseButton.setOnClickListener { it: View ->
+        binding.falseButton.setOnClickListener {
             answerQuestion(false)
         }
 
@@ -83,11 +82,11 @@ class MainActivity : AppCompatActivity() {
      * Initialize and or reset the quiz to the default state
      */
     private fun initQuiz() {
-        answers = Array<Boolean?>(questionBank.size) { null }
+        answers = Array(questionBank.size) { null }
         this.currentIndex = 0
 
         displayQuestion()
-        checkQuestionStatus()
+        updateButtonStates()
 
         // Reset Next Button
         binding.nextButton.setText(R.string.next_button)
@@ -111,7 +110,7 @@ class MainActivity : AppCompatActivity() {
             showAnswerFeedback(false)
         }
 
-        checkQuestionStatus()
+        updateButtonStates()
     }
 
     /**
@@ -134,7 +133,7 @@ class MainActivity : AppCompatActivity() {
     private fun nextQuestion() {
         this.currentIndex = (this.currentIndex + 1) % questionBank.size
         displayQuestion()
-        checkQuestionStatus()
+        updateButtonStates()
     }
 
     /**
@@ -147,14 +146,15 @@ class MainActivity : AppCompatActivity() {
             this.currentIndex - 1
         }
         displayQuestion()
-        checkQuestionStatus()
+        updateButtonStates()
     }
 
     /**
-     * Check the status of the current question and update the UI accordingly
+     * Updates the state of the buttons based on the current question and answers
      */
-    private fun checkQuestionStatus() {
-        // Is Answered
+    private fun updateButtonStates() {
+
+        // Enable/Disable Answer Buttons if Question Answered
         if (answers.getOrNull(this.currentIndex) != null) {
             binding.trueButton.isEnabled = false
             binding.falseButton.isEnabled = false
@@ -163,24 +163,22 @@ class MainActivity : AppCompatActivity() {
             binding.falseButton.isEnabled = true
         }
 
-        // Is First Question
+        // Disable Previous button if First Question
         binding.lastButton.isEnabled = this.currentIndex != 0
 
-        // Is Last Question
+        // Disable Next button if Last Question
         binding.nextButton.isEnabled = this.currentIndex != questionBank.size - 1
 
-        // All Questions Answered
+        // Change Next Button to Finish Button if all questions answered
         if (answers.all { it != null }) {
             binding.nextButton.setText(R.string.finish_button)
             binding.nextButton.isEnabled = true
             binding.nextButton.setOnClickListener {
                 endQuiz()
             }
-
         } else {
             binding.nextButton.setText(R.string.next_button)
         }
-
     }
 
     /**
