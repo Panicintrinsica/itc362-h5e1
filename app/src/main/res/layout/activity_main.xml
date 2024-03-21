@@ -10,11 +10,11 @@
 
     <TextView
         android:id="@+id/question_text_view"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="32dp"
         android:textAlignment="center"
-        android:textSize="24sp"/>
+        android:textSize="24sp" />
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -26,7 +26,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="6dp"
-            android:text="@string/true_button"/>
+            android:text="@string/true_button" />
 
         <Button
             android:id="@+id/false_button"
@@ -42,6 +42,18 @@
         android:layout_height="wrap_content"
         android:layout_margin="6dp">
 
+        <Button
+            android:id="@+id/cheat_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
+            android:text="@string/cheat_button" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="6dp">
 
         <Button
             android:id="@+id/last_button"
@@ -57,14 +69,27 @@
             android:id="@+id/next_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
             android:text="@string/next_button"
             app:icon="@drawable/arrow_right"
-            app:iconGravity="end"/>
+            app:iconGravity="end" />
 
 
     </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="6dp">
 
+        <Button
+            android:id="@+id/finish_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/finish_button" />
+
+    </LinearLayout>
 
 
 </LinearLayout>

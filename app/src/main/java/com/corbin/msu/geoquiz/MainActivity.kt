@@ -1,10 +1,16 @@
 package com.corbin.msu.geoquiz
 
+import android.app.Activity
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import com.corbin.msu.geoquiz.databinding.ActivityMainBinding
+import kotlin.math.log
 import kotlin.math.round
 
 private const val TAG = "MainActivity"
@@ -12,22 +18,22 @@ private const val TAG = "MainActivity"
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private val quizViewModel: QuizViewModel by viewModels()
 
-    private val questionBank = listOf(
-        Question(R.string.question_australia, true),
-        Question(R.string.question_oceans, true),
-        Question(R.string.question_mideast, false),
-        Question(R.string.question_africa, false),
-        Question(R.string.question_americas, true),
-        Question(R.string.question_asia, true)
-    )
 
-    private var answers = Array<Boolean?>(questionBank.size) { null }
-
-    private var currentIndex = 0
+    private val cheatLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            quizViewModel.isCheater =
+                result.data?.getBooleanExtra(IS_CHEATER_KEY, false) ?: false
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        Log.d(TAG, "Got a QuizViewModel: $quizViewModel")
 
         Log.d(TAG, "onCreate(Bundle?) called")
 
@@ -43,18 +49,34 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.questionTextView.setOnClickListener {
-            nextQuestion()
+            changeQuestion(NavDirection.NEXT)
+        }
+
+        binding.nextButton.setOnClickListener {
+            changeQuestion(NavDirection.NEXT)
         }
 
         binding.lastButton.setOnClickListener {
-            previousQuestion()
+            changeQuestion(NavDirection.PREVIOUS)
         }
 
+        binding.finishButton.setOnClickListener {
+            endQuiz()
+        }
+
+        binding.cheatButton.setOnClickListener {
+            // Start the CheatActivity
+            val answerIsTrue = quizViewModel.currentQuestionAnswer
+            val intent = CheatActivity.newIntent(this@MainActivity, answerIsTrue)
+
+            cheatLauncher.launch(intent)
+        }
     }
 
     override fun onStart() {
         super.onStart()
-        initQuiz()
+        displayQuestion()
+        updateButtonStates()
         Log.d(TAG, "onStart() called")
     }
 
@@ -79,37 +101,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Initialize and or reset the quiz to the default state
-     */
-    private fun initQuiz() {
-        answers = Array(questionBank.size) { null }
-        this.currentIndex = 0
-
-        displayQuestion()
-        updateButtonStates()
-
-        // Reset Next Button
-        binding.nextButton.setText(R.string.next_button)
-        binding.nextButton.setOnClickListener {
-            nextQuestion()
-        }
-    }
-
-    /**
      * Answer the current question
      * @param choice: The user's answer
      */
     private fun answerQuestion(choice: Boolean) {
-        val correctAnswer = questionBank[this.currentIndex].answer
-
-        if (choice == correctAnswer) {
-            answers[this.currentIndex] = true
-            showAnswerFeedback(true)
-        } else {
-            answers[this.currentIndex] = false
-            showAnswerFeedback(false)
-        }
-
+        showAnswerFeedback(
+            quizViewModel.answerQuestion(choice)
+        )
         updateButtonStates()
     }
 
@@ -118,33 +116,29 @@ class MainActivity : AppCompatActivity() {
      * @param isCorrect: if the user's answer was correct.
      */
     private fun showAnswerFeedback(isCorrect: Boolean) {
-        val messageResId = if (isCorrect) {
-            R.string.correct_toast
-        } else {
-            R.string.incorrect_toast
+        Log.d(TAG, "Cheated: " + quizViewModel.isCheater.toString())
+
+        val messageResId = when {
+            quizViewModel.isCheater -> R.string.judgment_toast
+            isCorrect -> R.string.correct_toast
+            else -> R.string.incorrect_toast
         }
 
         Toast.makeText(this, messageResId, Toast.LENGTH_SHORT).show()
     }
 
     /**
-     * Display the next question
+     * Changes the current question based on the provided navigation direction.
+     *
+     * @param direction The direction to navigate in the quiz. This should be either `NavDirection.NEXT`
+     * to move to the next question, or `NavDirection.PREVIOUS` to move to the previous question.
      */
-    private fun nextQuestion() {
-        this.currentIndex = (this.currentIndex + 1) % questionBank.size
-        displayQuestion()
-        updateButtonStates()
-    }
-
-    /**
-     * Display the previous question
-     */
-    private fun previousQuestion() {
-        this.currentIndex = if (this.currentIndex == 0) {
-            questionBank.size - 1
-        } else {
-            this.currentIndex - 1
+    private fun changeQuestion(direction: NavDirection) {
+        when (direction) {
+            NavDirection.NEXT -> quizViewModel.moveToNext()
+            NavDirection.PREVIOUS -> quizViewModel.moveToPrevious()
         }
+
         displayQuestion()
         updateButtonStates()
     }
@@ -153,60 +147,41 @@ class MainActivity : AppCompatActivity() {
      * Updates the state of the buttons based on the current question and answers
      */
     private fun updateButtonStates() {
+        // Enable/Disable Answer Buttons based on if the question is answered
+        val isAnswered = quizViewModel.isAnswered()
+        binding.trueButton.isEnabled = !isAnswered
+        binding.falseButton.isEnabled = !isAnswered
 
-        // Enable/Disable Answer Buttons if Question Answered
-        if (answers.getOrNull(this.currentIndex) != null) {
-            binding.trueButton.isEnabled = false
-            binding.falseButton.isEnabled = false
-        } else {
-            binding.trueButton.isEnabled = true
-            binding.falseButton.isEnabled = true
-        }
+        // Enable/Disable navigation buttons based on the current question index
+        binding.lastButton.isEnabled = quizViewModel.index != 0
+        binding.nextButton.isEnabled = quizViewModel.index != quizViewModel.length - 1
 
-        // Disable Previous button if First Question
-        binding.lastButton.isEnabled = this.currentIndex != 0
-
-        // Disable Next button if Last Question
-        binding.nextButton.isEnabled = this.currentIndex != questionBank.size - 1
-
-        // Change Next Button to Finish Button if all questions answered
-        if (answers.all { it != null }) {
-            binding.nextButton.setText(R.string.finish_button)
-            binding.nextButton.isEnabled = true
-            binding.nextButton.setOnClickListener {
-                endQuiz()
-            }
-        } else {
-            binding.nextButton.setText(R.string.next_button)
-        }
+        // Show/Hide the finish button based on if it's the final question
+        binding.finishButton.visibility = if (quizViewModel.isFinalQuestion()) View.VISIBLE else View.INVISIBLE
     }
 
     /**
      * Display the current question
      */
     private fun displayQuestion() {
-        val questionTextResId = questionBank[this.currentIndex].textResId
-        binding.questionTextView.setText(questionTextResId)
-    }
-
-    /**
-     * Calculate the user's score and display it to the user
-     * @return the user's score as a percentage
-     */
-    private fun calculateScore(): Double {
-        val score = answers.count { it == true }
-        return (score.toDouble() / questionBank.size.toDouble()) * 100
+        binding.questionTextView.setText(quizViewModel.currentQuestionText)
     }
 
     /**
      * End the quiz and display the user's score, then reset the quiz.
      */
     private fun endQuiz() {
-        val score = calculateScore()
-        val message = "You scored " + round(score * 10.0) / 10.0 + "%"
+        val message = "You scored " + round(quizViewModel.getScore() * 10.0) / 10.0 + "%"
 
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
 
-        initQuiz()
+        quizViewModel.resetQuiz()
+        displayQuestion()
+        updateButtonStates()
     }
+}
+
+private enum class NavDirection {
+    NEXT,
+    PREVIOUS
 }
